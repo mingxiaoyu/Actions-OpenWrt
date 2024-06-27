@@ -18,3 +18,16 @@ sed -i 's/192.168.1.1/192.168.3.1/g' package/base-files/files/bin/config_generat
 
 # Modify hostname
 #sed -i 's/OpenWrt/P3TERX-Router/g' package/base-files/files/bin/config_generate
+
+sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-5.4
+sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-5.10
+sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-5.15
+sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-6.1
+sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-6.6
+
+sed -i 's/KERNEL_PATCHVER:=6.1/KERNEL_PATCHVER:=5.15/g' target/linux/rockchip/Makefile
+
+mkdir -p files/usr/share/singbox
+
+wget -O files/usr/share/singbox/geoip.db  https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.db 
+wget -O files/usr/share/singbox/geosite.db https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.db  
