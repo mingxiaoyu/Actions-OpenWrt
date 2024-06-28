@@ -76,9 +76,11 @@ jobs:
         git checkout .
         rm -rf  openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3568-hinlink-opc.dtsi
         rm -rf  openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3568-rock-3a.dts
+        rm -rf  openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3568-hinlink-opc.dtsi
         mv rk3568-hinlink-opc.dtsi  openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3568-hinlink-opc.dtsi
         mv rk3568-rock-3a.dts openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3568-rock-3a.dts
-        
+        mv rk3568-hinlink-opc.dtsi openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3568-hinlink-opc.dtsi
+
         [ -e patches ] && mv patches openwrt/patches && cd openwrt && git apply --ignore-whitespace patches/*.patch && rm -rf patches
       
     - name: Load custom feeds
