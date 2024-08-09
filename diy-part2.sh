@@ -27,7 +27,32 @@ sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-6
 
 sed -i 's/KERNEL_PATCHVER:=6.1/KERNEL_PATCHVER:=5.15/g' target/linux/rockchip/Makefile
 
+# passwall2 singbox
 mkdir -p files/usr/share/singbox
-
 wget -O files/usr/share/singbox/geoip.db  https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.db 
 wget -O files/usr/share/singbox/geosite.db https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.db  
+
+# 预置openclash内核
+mkdir -p files/etc/openclash/core
+
+# openclash 的 TUN内核
+CLASH_TUN_VERSION=$(curl -sL https://github.com/vernesong/OpenClash/raw/core/master/core_version | head -n 2 | tail -n 1)
+CLASH_TUN_URL="https://github.com/vernesong/OpenClash/raw/core/master/premium/clash-linux-arm64-$CLASH_TUN_VERSION.gz"
+
+# Meta内核版本
+CLASH_META_URL="https://github.com/vernesong/OpenClash/raw/core/dev/meta/clash-linux-arm64.tar.gz"
+
+wget -qO- $CLASH_TUN_URL | gunzip -c > files/etc/openclash/core/clash_tun
+wget -qO- $CLASH_META_URL | gunzip -c > files/etc/openclash/core/clash_meta
+# 给内核权限
+chmod +x files/etc/openclash/core/clash*
+
+# meta 要GeoIP.dat 和 GeoSite.dat
+GEOIP_URL=https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.dat
+GEOSITE_URL=https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat
+wget -qO- $GEOIP_URL > files/etc/openclash/GeoIP.dat
+wget -qO- $GEOSITE_URL > files/etc/openclash/GeoSite.dat
+
+# Country.mmdb
+COUNTRY_FULL_URL=https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/country.mmdb
+wget -qO- $COUNTRY_FULL_URL > files/etc/openclash/Country.mmdb
