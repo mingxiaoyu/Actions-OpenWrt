@@ -40,7 +40,8 @@ CLASH_TUN_VERSION=$(curl -sL https://github.com/vernesong/OpenClash/raw/core/mas
 CLASH_TUN_URL="https://github.com/vernesong/OpenClash/raw/core/master/premium/clash-linux-arm64-$CLASH_TUN_VERSION.gz"
 
 # Meta内核版本
-CLASH_META_URL="https://github.com/vernesong/OpenClash/raw/core/dev/meta/clash-linux-arm64.tar.gz"
+#CLASH_META_URL="https://github.com/vernesong/OpenClash/raw/core/dev/meta/clash-linux-arm64.tar.gz"
+CLASH_META_URL="https://github.com/vernesong/OpenClash/raw/core/master/meta/clash-linux-arm64.tar.gz"
 
 wget -qO- $CLASH_TUN_URL | gunzip -c > files/etc/openclash/core/clash_tun
 wget -qO- $CLASH_META_URL | gunzip -c > files/etc/openclash/core/clash_meta
