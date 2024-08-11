@@ -5,7 +5,7 @@ Subject: [PATCH] repair tf card
 
 ---
  .../armv8/base-files/etc/init.d/repair_ro     |  7 +++
- .../rockchip/armv8/base-files/sbin/repair_ro  | 51 +++++++++++++++++++
+ .../rockchip/armv8/base-files/sbin/repair_ro  | 52 +++++++++++++++++++
  .../armv8/base-files/usr/bin/repair_ro        |  3 ++
  3 files changed, 61 insertions(+)
  create mode 100755 target/linux/rockchip/armv8/base-files/etc/init.d/repair_ro
@@ -30,7 +30,7 @@ new file mode 100755
 index 0000000000..094f0f0a70
 --- /dev/null
 +++ b/target/linux/rockchip/armv8/base-files/sbin/repair_ro
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,52 @@
 +#!/bin/sh
 +# Created by Frizkyiman
 +# Github https://github.com/frizkyiman/
@@ -66,6 +66,7 @@ index 0000000000..094f0f0a70
 +        _echo notice "Mounting $root_device to read-write"
 +        mount -o remount,rw "$root_device" /
 +        _echo notice "Rebooting the system..."
++        rm -rf /etc/rc.d/S99repair_ro
 +        reboot
 +        if [ $? -ne 0 ]; then
 +            _echo err "Reboot command failed. Please try force reboot if necessary using reboot -f"
