@@ -55,7 +55,7 @@ index 0000000000..094f0f0a70
 +    exit 1
 +fi
 +
-+ro_status=$(mount | awk '/\/dev\/root/ && /ro,/ {print $6}' | grep -o 'ro' | head -n 1)
++ro_status=$(mount | awk '$root_device && /ro,/ {print $6}' | grep -o 'ro' | head -n 1)
 +
 +if [ "$ro_status" = "ro" ]; then
 +    _echo notice "Detected root file system: $root_device"
