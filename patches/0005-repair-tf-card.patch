@@ -5,7 +5,7 @@ Subject: [PATCH] repair tf card
 
 ---
  .../armv8/base-files/etc/init.d/repair_ro     |  7 +++
- .../rockchip/armv8/base-files/sbin/repair_ro  | 60 +++++++++++++++++++
+ .../rockchip/armv8/base-files/sbin/repair_ro  | 61 +++++++++++++++++++
  .../armv8/base-files/usr/bin/repair_ro        |  3 ++
  3 files changed, 61 insertions(+)
  create mode 100755 target/linux/rockchip/armv8/base-files/etc/init.d/repair_ro
@@ -30,7 +30,7 @@ new file mode 100755
 index 0000000000..094f0f0a70
 --- /dev/null
 +++ b/target/linux/rockchip/armv8/base-files/sbin/repair_ro
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,61 @@
 +#!/bin/sh
 +
 +log_message() {
@@ -86,6 +86,7 @@ index 0000000000..094f0f0a70
 +      fi
 +    fi
 +  else
++    rm -f "$REPAIR_LOCK"
 +    log_message "notice" "Root file system '$ROOT_DEVICE' is already in read-write mode."
 +  fi
 +}
