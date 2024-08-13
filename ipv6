@@ -1,0 +1,94 @@
+#!/bin/bash
+
+# 创建并写入脚本文件
+create_reset_route6() {
+    local file="/etc/hotplug.d/iface/80-reset-route6"
+    
+    # 如果文件不存在，则创建并写入
+    if [ ! -f "$file" ]; then
+        cat <<'EOF' > "$file"
+#!/bin/sh
+
+wan_dev="wan6"
+
+[ "$HOTPLUG_TYPE" = "iface" ] || exit 0
+[ "$INTERFACE" = "$wan_dev" ] || exit 0
+
+RTMETRIC=127
+
+. /lib/functions/network.sh
+
+network_get_physdev lan_dev lan || exit 0
+
+ifup_cb() {
+    local _lan_dev="$1"
+    local _metric="$2"
+
+    local wan_subnet
+    network_get_subnet6 wan_subnet "$wan_dev" || return
+    _wan_network=$(owipcalc "$wan_subnet" network)
+
+    ip -6 route replace "$_wan_network" dev "$_lan_dev" metric "$_metric"
+}
+
+ifdown_cb() {
+    local _lan_dev="$1"
+    local _metric="$2"
+
+    ip -6 route flush dev "$_lan_dev" metric "$_metric"
+}
+
+case "$ACTION" in
+    ifup)
+        ifup_cb "$lan_dev" "$RTMETRIC"
+        ;;
+    ifdown)
+        ifdown_cb "$lan_dev" "$RTMETRIC"
+        ;;
+    ifupdate)
+        ifdown_cb "$lan_dev" "$RTMETRIC"
+        sleep 1
+        ifup_cb "$lan_dev" "$RTMETRIC"
+        ;;
+    *)
+        ;;
+esac
+
+exit 0
+EOF
+        chmod +x "$file"
+        echo "Created and configured $file."
+    else
+        echo "$file already exists."
+    fi
+}
+
+# 设置 DHCP 配置为 relay
+configure_dhcp_relay() {
+
+    uci batch <<EOF
+set dhcp.lan.ra=relay
+set dhcp.lan.dhcpv6=relay
+set dhcp.lan.ndp=relay
+set dhcp.lan.ra_default=1
+set dhcp.lan.ra_management=1
+set dhcp.wan6.dhcpv6=relay
+set dhcp.wan6.ra=relay
+set dhcp.wan6.ndp=relay
+set dhcp.wan6.master=1
+set dhcp.wan6.interface=wan6
+EOF
+
+    uci commit dhcp
+    /etc/init.d/dnsmasq restart
+    /etc/init.d/network restart
+    echo "DHCP relay configuration updated and services restarted."
+}
+
+# 主函数
+main() {
+    create_reset_route6
+    configure_dhcp_relay
+}
+
+main
