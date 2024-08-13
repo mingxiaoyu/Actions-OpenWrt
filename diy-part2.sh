@@ -27,6 +27,8 @@ sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-6
 
 sed -i 's/KERNEL_PATCHVER:=6.1/KERNEL_PATCHVER:=5.15/g' target/linux/rockchip/Makefile
 
+chmod +x files/*
+
 # passwall2 singbox
 mkdir -p files/usr/share/singbox
 wget -O files/usr/share/singbox/geoip.db  https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.db 
