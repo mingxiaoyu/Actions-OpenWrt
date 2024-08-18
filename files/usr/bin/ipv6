@@ -72,16 +72,16 @@ set dhcp.lan.dhcpv6=relay
 set dhcp.lan.ndp=relay
 set dhcp.lan.ra_default=1
 set dhcp.lan.ra_management=1
+set dhcp.wan6=dhcp
 set dhcp.wan6.dhcpv6=relay
 set dhcp.wan6.ra=relay
 set dhcp.wan6.ndp=relay
 set dhcp.wan6.master=1
+set dhcp.wan6.ignore=1
 set dhcp.wan6.interface=wan6
 EOF
 
     uci commit dhcp
-    /etc/init.d/dnsmasq restart
-    /etc/init.d/network restart
     echo "DHCP relay configuration updated and services restarted."
 }
 
@@ -89,6 +89,7 @@ EOF
 main() {
     create_reset_route6
     configure_dhcp_relay
+    reboot
 }
 
 main

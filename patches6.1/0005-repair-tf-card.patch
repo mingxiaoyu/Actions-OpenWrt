@@ -1,0 +1,105 @@
+From ed6debc7a5b68ea6ab2f9163d9ef5ea45b055d56 Mon Sep 17 00:00:00 2001
+From: username <useremail@qq.com>
+Date: Fri, 9 Aug 2024 06:13:40 +0000
+Subject: [PATCH] repair tf card
+
+---
+ .../armv8/base-files/etc/init.d/repair_ro     |  7 +++
+ .../rockchip/armv8/base-files/sbin/repair_ro  | 61 +++++++++++++++++++
+ .../armv8/base-files/usr/bin/repair_ro        |  3 ++
+ 3 files changed, 61 insertions(+)
+ create mode 100755 target/linux/rockchip/armv8/base-files/etc/init.d/repair_ro
+ create mode 100755 target/linux/rockchip/armv8/base-files/sbin/repair_ro
+ create mode 100755 target/linux/rockchip/armv8/base-files/usr/bin/repair_ro
+
+diff --git a/target/linux/rockchip/armv8/base-files/etc/init.d/repair_ro b/target/linux/rockchip/armv8/base-files/etc/init.d/repair_ro
+new file mode 100755
+index 0000000000..8d8a5bde49
+--- /dev/null
++++ b/target/linux/rockchip/armv8/base-files/etc/init.d/repair_ro
+@@ -0,0 +1,7 @@
++#!/bin/sh /etc/rc.common
++
++START=22
++
++start() {
++    /sbin/repair_ro
++}
+diff --git a/target/linux/rockchip/armv8/base-files/sbin/repair_ro b/target/linux/rockchip/armv8/base-files/sbin/repair_ro
+new file mode 100755
+index 0000000000..094f0f0a70
+--- /dev/null
++++ b/target/linux/rockchip/armv8/base-files/sbin/repair_ro
+@@ -0,0 +1,61 @@
++#!/bin/sh
++
++log_message() {
++  [ "$1" = 'err' ] && echo $2 >&2 || echo $2
++  logger -p "$1" -t repair_co "$2"
++}
++
++RC_LOCAL="/etc/rc.local"
++ROOT_DEVICE=$(blkid -L rootfs -o device)
++REPAIR_LOCK="/root/repairlock"
++
++
++reboot_system(){
++  touch "$REPAIR_LOCK"
++  log_message "notice" "Rebooting the system..."
++  reboot
++  
++  if [ $? -ne 0 ]; then
++    log_message "err" "Reboot command failed. Please try a forced reboot using reboot -f"
++  fi
++}
++
++main(){
++  if [ -z "$ROOT_DEVICE" ]; then
++    log_message "err" "Root file system device not found. Unable to repair."
++    exit 1
++  fi
++  
++  RO_STATUS=$(mount | grep -w "$ROOT_DEVICE" | grep -o 'ro' | head -n 1)
++  
++  if [ "$RO_STATUS" = "ro" ]; then
++    log_message "notice" "Root file system '$ROOT_DEVICE' is read-only. Initiating repair..."
++    
++    if e2fsck -y "$ROOT_DEVICE"; then
++      log_message "notice" "File system repair successful."
++      log_message "notice" "Remounting '$ROOT_DEVICE' as read-write."
++      mount -o remount,rw "$ROOT_DEVICE" /
++      
++      if [ -e "$REPAIR_LOCK" ]; then
++        rm -f /etc/rc.d/S22repair_ro
++        sed -i '/#repair tf#/,/#repair tf#/d' "$RC_LOCAL"
++        sed -i "/^exit 0/i #repair tf#\ne2fsck -y $ROOT_DEVICE\nmount -o remount,rw /\n#repair tf#" "$RC_LOCAL"
++        rm -f "$REPAIR_LOCK"
++      else
++        reboot_system
++      fi
++    else
++      log_message "err" "An error occurred during file system repair."
++      
++      if [ ! -e "$REPAIR_LOCK" ]; then
++        log_message "notice" "Attempting to reboot..."
++        reboot_system
++      fi
++    fi
++  else
++    rm -f "$REPAIR_LOCK"
++    log_message "notice" "Root file system '$ROOT_DEVICE' is already in read-write mode."
++  fi
++}
++
++main
+diff --git a/target/linux/rockchip/armv8/base-files/usr/bin/repair_ro b/target/linux/rockchip/armv8/base-files/usr/bin/repair_ro
+new file mode 100755
+index 0000000000..cee9b226e6
+--- /dev/null
++++ b/target/linux/rockchip/armv8/base-files/usr/bin/repair_ro
+@@ -0,0 +1,3 @@
++#!/bin/sh
++root_device="$1"
++/sbin/repair_ro "$root_device"
+-- 
+2.25.1

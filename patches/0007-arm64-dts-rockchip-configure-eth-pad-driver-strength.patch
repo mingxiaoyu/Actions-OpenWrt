@@ -1,0 +1,39 @@
+From bf19300ab538bc7456b8fde5186ef7dda4850318 Mon Sep 17 00:00:00 2001
+From: username <useremail@qq.com>
+Date: Wed, 14 Aug 2024 15:59:47 +0800
+Subject: [PATCH] arm64-dts-rockchip-configure-eth-pad-driver-strength
+
+---
+ ...ip-configure-eth-pad-driver-strength.patch | 21 +++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+ create mode 100644 target/linux/rockchip/patches-5.15/999-arm64-dts-rockchip-configure-eth-pad-driver-strength.patch
+
+diff --git a/target/linux/rockchip/patches-5.15/999-arm64-dts-rockchip-configure-eth-pad-driver-strength.patch b/target/linux/rockchip/patches-5.15/999-arm64-dts-rockchip-configure-eth-pad-driver-strength.patch
+new file mode 100644
+index 0000000..4da68b6
+--- /dev/null
++++ b/target/linux/rockchip/patches-5.15/999-arm64-dts-rockchip-configure-eth-pad-driver-strength.patch
+@@ -0,0 +1,21 @@
++From a81ac1e1325337aa8e0c4b4b1f1c30af5bb1685e Mon Sep 17 00:00:00 2001
++From: username <useremail@qq.com>
++Date: Wed, 14 Aug 2024 15:41:14 +0800
++Subject: [PATCH] arm64: dts: rockchip: configure eth pad driver strength for
++ orangepi r1 plus lts
++
++---
++ arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts | 2 ++
++ 1 file changed, 2 insertions(+)
++
++--- a/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
+++++ b/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
++@@ -44,6 +44,8 @@
++  			motorcomm,clk-out-frequency-hz = <125000000>;
++ 			motorcomm,keep-pll-enabled;
++ 			motorcomm,auto-sleep-disabled;
+++			motorcomm,rx-clk-drv-microamp = <5020>;
+++			motorcomm,rx-data-drv-microamp = <5020>;
++ 
++ 			pinctrl-0 = <&eth_phy_reset_pin>;
++ 			pinctrl-names = "default";
+-- 
+2.43.0.windows.1

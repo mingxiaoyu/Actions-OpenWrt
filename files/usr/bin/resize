@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# Function to install missing packages
+install_missing_package() {
+    local package=$1
+    if ! opkg list-installed | grep -q "^${package} "; then
+        echo "Installing $package..."
+        opkg install $package
+    fi
+}
+
+# Check and install necessary packages
+check_and_install_packages() {
+    local packages=(
+        "fdisk"
+        "losetup"  # This includes losetup
+        "f2fs-tools"   # This includes fsck.f2fs and resize.f2fs
+        "e2fsprogs"    # This includes fsck.ext4 and resize2fs
+    )
+
+    # Update package index
+    opkg update
+
+    # Install each package
+    for pkg in "${packages[@]}"; do
+        install_missing_package $pkg
+    done
+}
+
+# Run the package check and installation
+check_and_install_packages
+
+# Parse arguments for extension size
+extension_size=${1:-0}  # Default to 0 if no size is specified
+
+FDISK=$(which fdisk)
+LOSETUP=$(which losetup)
+FSCKF2FS=$(which fsck.f2fs)
+FSCKEXT4=$(which fsck.ext4)
+RESIZE2FS=$(which resize2fs)
+RESIZEF2FS=$(which resize.f2fs)
+
+roottype=$(findmnt -n -o SOURCE / -o FSTYPE)
+case ${roottype} in
+    overlay)
+        rootsource=$(findmnt -n -o SOURCE /rom)  # i.e. /dev/mmcblk0p2
+        rootdevice=${rootsource%p*}  # i.e. /dev/mmcblk0
+        partitions=${rootsource##*p}
+
+        # Resizing partitions
+        lastsector=$(${FDISK} -l ${rootdevice} | grep "Disk ${rootdevice}" | awk '{print $7}')
+        lastsector=$(( $lastsector - 1 ))
+        startfrom=$(${FDISK} -l ${rootdevice} | grep ${rootsource} | awk '{print $2}')
+        partend=$(${FDISK} -l ${rootdevice} | grep ${rootsource} | awk '{print $3}')
+        
+        if [[ $extension_size -eq 0 ]]; then
+            lastsector=$((lastsector - 1))
+        else
+            lastsector=$((startfrom + extension_size * 2048 - 1))
+        fi
+
+        [[ $lastsector -eq $partend ]] && exit 0
+        (echo d; echo $partitions; echo n; echo p; echo ; echo $startfrom; echo $lastsector ; echo w;) | fdisk $rootdevice
+        sync
+
+        # Start resizing filesystem
+        LOOP="$(losetup -n -O NAME | sort | sed -n -e "1p")"
+        ROOT="$(losetup -n -O BACK-FILE ${LOOP} | sed -e "s|^|/dev|")"
+        OFFS="$(losetup -n -O OFFSET ${LOOP})"
+        LOOP="$(losetup -f)"
+        ${LOSETUP} -o ${OFFS} ${LOOP} ${ROOT}
+        ${FSCKF2FS} -f ${LOOP}
+        mount ${LOOP} /mnt
+        umount ${LOOP}
+        resize.f2fs ${LOOP}
+        sync && reboot
+        ;;
+    ext4)
+        rootsource=$(findmnt -n -o SOURCE / | sed 's~\[.*\]~~')  # i.e. /dev/mmcblk0p2
+        rootdevice=${rootsource%p*}  # i.e. /dev/mmcblk0
+        partitions=${rootsource##*p}
+
+        # Resizing partitions
+        lastsector=$(${FDISK} -l ${rootdevice} | grep "Disk ${rootdevice}" | awk '{print $7}')
+        lastsector=$(( $lastsector - 1 ))
+        startfrom=$(${FDISK} -l ${rootdevice} | grep ${rootsource} | awk '{print $2}')
+        partend=$(${FDISK} -l ${rootdevice} | grep ${rootsource} | awk '{print $3}')
+        
+        if [[ $extension_size -eq 0 ]]; then
+            lastsector=$((lastsector - 1))
+        else
+            lastsector=$((startfrom + extension_size * 2048 - 1))
+        fi
+
+        [[ $lastsector -eq $partend ]] && exit 0
+        (echo d; echo $partitions; echo n; echo p; echo ; echo $startfrom; echo $lastsector ; echo w;) | fdisk $rootdevice
+        sync
+
+        # Start resizing filesystem
+        LOOP="$(losetup -f)"
+        ${LOSETUP} ${LOOP} ${rootsource}
+        ${FSCKEXT4} -y ${LOOP}
+        ${RESIZE2FS} ${LOOP}
+        sync && reboot
+        ;;
+esac

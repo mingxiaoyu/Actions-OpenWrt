@@ -1,0 +1,5 @@
+config global
+	option navbar 'display'
+	option navbar_proxy 'openclash'
+	option save '保存更改'
+	option mode 'normal'

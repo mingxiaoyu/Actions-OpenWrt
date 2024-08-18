@@ -13,9 +13,6 @@
 # Modify default IP
 sed -i 's/192.168.1.1/192.168.3.1/g' package/base-files/files/bin/config_generate
 
-# Modify default theme
-#sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/Makefile
-
 # Modify hostname
 #sed -i 's/OpenWrt/P3TERX-Router/g' package/base-files/files/bin/config_generate
 
@@ -25,9 +22,12 @@ sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-5
 sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-6.1
 sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-6.6
 
-sed -i 's/KERNEL_PATCHVER:=6.1/KERNEL_PATCHVER:=5.15/g' target/linux/rockchip/Makefile
+mkdir package/community
 
-chmod +x files/*
+pushd package/community
+
+
+popd
 
 # passwall2 singbox
 mkdir -p files/usr/share/singbox
@@ -60,3 +60,5 @@ wget -qO- $GEOSITE_URL > files/etc/openclash/GeoSite.dat
 # Country.mmdb
 COUNTRY_FULL_URL=https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/country.mmdb
 wget -qO- $COUNTRY_FULL_URL > files/etc/openclash/Country.mmdb
+
+chmod -R +x files
