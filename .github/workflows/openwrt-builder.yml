@@ -67,16 +67,13 @@ jobs:
 
     - name: Patch
       run: |
-        git checkout .
-        
-        rm -rf  openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3568-hinlink-opc.dtsi
-        rm -rf  openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3568-rock-3a.dts
-        rm -rf  openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3568-fastrhino.dtsi
+        sudo cp lede/9999-add-missing-parameters-for-LTS.patch openwrt/package/boot/uboot-rockchip/patches/9999-add-missing-parameters-for-LTS.patch
+        sudo cp lede/100-add-LED-configuration-from-OF.patch openwrt/package/lean/r8152/patches/100-add-LED-configuration-from-OF.patch
+              sudo cp -f lede/armv8.mk openwrt/target/linux/rockchip/image/armv8.mk
+              sudo cp -f lede/uboot-rockchip-Makefile package/boot/uboot-rockchip/Makefile
+        sudo rm -rf openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip
+        sudo cp -rf lede/rockchip/. openwrt/target/linux/rockchip
 
-        mv rk3568-hinlink-opc.dtsi  openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3568-hinlink-opc.dtsi
-        mv rk3568-rock-3a.dts       openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3568-rock-3a.dts
-        mv rk3568-fastrhino.dtsi    openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3568-fastrhino.dtsi
-        [ -e "$PATCHES_DIR" ] && mv "$PATCHES_DIR" openwrt/patches && cd openwrt && git apply --ignore-whitespace patches/*.patch && rm -rf patches
 
     - name: Load custom feeds
       run: |
@@ -155,7 +152,7 @@ jobs:
       id: tag
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
-        echo "release_tag=Kernel515-$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
+        echo "release_tag=Kernel-5.15-$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
         touch release.txt
         echo "kernel 5.15" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
@@ -182,6 +179,6 @@ jobs:
       with:
         keep_latest: 3
         delete_tags: true
-        delete_tag_pattern: Kernel515
+        delete_tag_pattern: Kernel-5.15
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

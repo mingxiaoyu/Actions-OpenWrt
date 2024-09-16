@@ -1,0 +1,58 @@
+#!/bin/sh
+
+log_message() {
+  [ "$1" = 'err' ] && echo $2 >&2 || echo $2
+  logger -p "$1" -t repair_co "$2"
+}
+
+RC_LOCAL="/etc/rc.local"
+ROOT_DEVICE=$(blkid -L rootfs -o device)
+REPAIR_LOCK="/usr/share/repairlock"
+
+
+reboot_system(){
+  touch "$REPAIR_LOCK"
+  log_message "notice" "Rebooting the system..."
+  reboot
+  
+  if [ $? -ne 0 ]; then
+    log_message "err" "Reboot command failed. Please try a forced reboot using reboot -f"
+  fi
+}
+
+main(){
+  if [ -z "$ROOT_DEVICE" ]; then
+    log_message "err" "Root file system device not found. Unable to repair."
+    exit 1
+  fi
+  
+  RO_STATUS=$(mount | grep -w "$ROOT_DEVICE" | grep -o 'ro' | head -n 1)
+  
+  if [ "$RO_STATUS" = "ro" ]; then
+    log_message "notice" "Root file system '$ROOT_DEVICE' is read-only. Initiating repair..."
+    
+    if e2fsck -y "$ROOT_DEVICE"; then
+      log_message "notice" "File system repair successful."
+      log_message "notice" "Remounting '$ROOT_DEVICE' as read-write."
+      mount -o remount,rw "$ROOT_DEVICE" /
+      
+      if [ -e "$REPAIR_LOCK" ]; then
+        log_message "notice" "Found the '$REPAIR_LOCK',  There are bad lanes that cannot be modified!"
+      else
+        reboot_system
+      fi
+    else
+      log_message "err" "An error occurred during file system repair."
+      
+      if [ ! -e "$REPAIR_LOCK" ]; then
+        log_message "notice" "Attempting to reboot..."
+        reboot_system
+      fi
+    fi
+  else
+    rm -f "$REPAIR_LOCK"
+    log_message "notice" "Root file system '$ROOT_DEVICE' is already in read-write mode."
+  fi
+}
+
+main
