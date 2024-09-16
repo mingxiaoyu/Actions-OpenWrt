@@ -70,7 +70,7 @@ jobs:
         sudo cp lede/9999-add-missing-parameters-for-LTS.patch openwrt/package/boot/uboot-rockchip/patches/9999-add-missing-parameters-for-LTS.patch
         sudo cp lede/100-add-LED-configuration-from-OF.patch openwrt/package/lean/r8152/patches/100-add-LED-configuration-from-OF.patch
               sudo cp -f lede/armv8.mk openwrt/target/linux/rockchip/image/armv8.mk
-              sudo cp -f lede/uboot-rockchip-Makefile package/boot/uboot-rockchip/Makefile
+              sudo cp -f lede/uboot-rockchip-Makefile openwrt/package/boot/uboot-rockchip/Makefile
         sudo rm -rf openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip
         sudo cp -rf lede/rockchip/. openwrt/target/linux/rockchip
 
