@@ -28,7 +28,7 @@
  	depends on (ARCH_ROCKCHIP || COMPILE_TEST) && OF
 --- a/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
-@@ -47,3 +47,69 @@
+@@ -40,3 +40,69 @@
  		};
  	};
  };
