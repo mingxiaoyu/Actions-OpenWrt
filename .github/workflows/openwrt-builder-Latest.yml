@@ -26,6 +26,7 @@ env:
   DIY_P1_SH: scripts/diy-part1.sh
   DIY_P2_SH: scripts/diy-part2.sh
   UPLOAD_TO_TG_SH: scripts/upload-to-telegram.sh
+  R1_Plus_LTS_PATCH: 203-rockchip-rk3328-Add-support-for-OrangePi-R1-Plus-LTS.patch
   ENV_SH: scripts/environment.sh
   FREE_DISK_SH: scripts/free_disk_space.sh
   PATCHES_DIR: patches6.1
@@ -76,8 +77,7 @@ jobs:
         git checkout .
 
         [ -e "$PATCHES_DIR" ] && mv "$PATCHES_DIR" openwrt/patches && cd openwrt && git apply --ignore-whitespace patches/*.patch && rm -rf patches
-        rm -rf  target/linux/rockchip/patches-6.1/991-arm64-dts-rockchip-add-more-cpu-operating-points-for.patch
-        wget -O target/linux/rockchip/patches-6.1/991-arm64-dts-rockchip-add-more-cpu-operating-points-for.patch https://raw.githubusercontent.com/mingxiaoyu/Actions-OpenWrt/main/991-arm64-dts-rockchip-add-more-cpu-operating-points-for.patch
+        [ -e $R1_Plus_LTS_PATCH ] && mv $R1_Plus_LTS_PATCH openwrt/target/linux/rockchip/patches-6.6
       
     - name: Load custom feeds
       run: |
