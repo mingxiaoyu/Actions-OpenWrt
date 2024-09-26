@@ -28,59 +28,52 @@
  	depends on (ARCH_ROCKCHIP || COMPILE_TEST) && OF
 --- a/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
-@@ -9,16 +9,12 @@
- /dts-v1/;
- #include "rk3328-orangepi-r1-plus.dts"
+@@ -12,6 +12,40 @@
+ / {
+ 	model = "Xunlong Orange Pi R1 Plus LTS";
+ 	compatible = "xunlong,orangepi-r1-plus-lts", "rockchip,rk3328";
++	
++	&usb3phy_grf: syscon@ff77c000 {
++		compatible = "rockchip,rk3328-usb3phy-grf", "syscon", "simple-mfd";
++		reg = <0x0 0xff77c000 0x0 0x1000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++	};
++	
++	&u3phy: usb3-phy@ff470000 {
++		compatible = "rockchip,rk3328-usb3-phy";
++		reg = <0x0 0xff470000 0x0 0x10000>;
++		clocks = <&cru SCLK_USB3PHY_REF>;
++		clock-names = "ref";
++		resets = <&cru SRST_USB3PHY>;
++		reset-names = "phy";
++		rockchip,grf = <&usb3phy_grf>;
++		status = "okay";
++	};
++	
++	&usbdrd3: usb@ff600000 {
++		compatible = "snps,dwc3";
++		reg = <0x0 0xff600000 0x0 0x100000>;
++		interrupts = <GIC_SPI 104 IRQ_TYPE_LEVEL_HIGH 0>;
++		interrupt-names = "dwc3";
++		clocks = <&cru SCLK_USB3OTG_REF>;
++		clock-names = "ref";
++		phys = <&u3phy>;
++		phy-names = "usb3-phy";
++		dr_mode = "host";
++		maximum-speed = "super-speed";
++		snps,quirk-frame-length-adjustment;
++		snps,dis-u2-freeclk-exists-quirk;
++		status = "okay";
++	};
+ };
  
--/ {
--	model = "Xunlong Orange Pi R1 Plus LTS";
--	compatible = "xunlong,orangepi-r1-plus-lts", "rockchip,rk3328";
--};
--
  &dmc_opp_table {
- 	/delete-node/ opp-798000000;
+@@ -19,6 +53,7 @@
  	/delete-node/ opp-840000000;
  	/delete-node/ opp-924000000;
  	/delete-node/ opp-1056000000;
-+	/delete-node/ opp-1608000000; 
++	/delete-node/ opp-1608000000;
  };
  
  &gmac2io {
-@@ -47,3 +43,37 @@
- 		};
- 	};
- };
-+
-+&usb3phy_grf: syscon@ff77c000 {
-+	compatible = "rockchip,rk3328-usb3phy-grf", "syscon", "simple-mfd";
-+	reg = <0x0 0xff77c000 0x0 0x1000>;
-+	#address-cells = <1>;
-+	#size-cells = <1>;
-+};
-+
-+&u3phy: usb3-phy@ff470000 {
-+	compatible = "rockchip,rk3328-usb3-phy";
-+	reg = <0x0 0xff470000 0x0 0x10000>;
-+	clocks = <&cru SCLK_USB3PHY_REF>;
-+	clock-names = "ref";
-+	resets = <&cru SRST_USB3PHY>;
-+	reset-names = "phy";
-+	rockchip,grf = <&usb3phy_grf>;
-+	status = "okay";
-+};
-+
-+&usbdrd3: usb@ff600000 {
-+	compatible = "snps,dwc3";
-+	reg = <0x0 0xff600000 0x0 0x100000>;
-+	interrupts = <GIC_SPI 104 IRQ_TYPE_LEVEL_HIGH 0>;
-+	interrupt-names = "dwc3";
-+	clocks = <&cru SCLK_USB3OTG_REF>;
-+	clock-names = "ref";
-+	phys = <&u3phy>;
-+	phy-names = "usb3-phy";
-+	dr_mode = "host";
-+	maximum-speed = "super-speed";
-+	snps,quirk-frame-length-adjustment;
-+	snps,dis-u2-freeclk-exists-quirk;
-+	status = "okay";
-+};
