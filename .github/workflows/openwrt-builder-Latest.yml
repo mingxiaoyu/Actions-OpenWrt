@@ -26,7 +26,7 @@ env:
   DIY_P1_SH: scripts/diy-part1.sh
   DIY_P2_SH: scripts/diy-part2.sh
   UPLOAD_TO_TG_SH: scripts/upload-to-telegram.sh
-  R1_Plus_LTS_PATCH: 203-rockchip-rk3328-Add-support-for-OrangePi-R1-Plus-LTS.patch
+  R1_Plus_LTS_PATCH: 999-rockchip-rk3328-Add-support-for-OrangePi-R1-Plus-LTS.patch
   ENV_SH: scripts/environment.sh
   FREE_DISK_SH: scripts/free_disk_space.sh
   PATCHES_DIR: patches6.1
