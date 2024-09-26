@@ -76,9 +76,9 @@ jobs:
       run: |
         git checkout .
 
-        [ -e "$PATCHES_DIR" ] && mv "$PATCHES_DIR" openwrt/patches && cd openwrt && git apply --ignore-whitespace patches/*.patch && rm -rf patches
         [ -e $R1_Plus_LTS_PATCH ] && mv $R1_Plus_LTS_PATCH openwrt/target/linux/rockchip/patches-6.6
-      
+        [ -e "$PATCHES_DIR" ] && mv "$PATCHES_DIR" openwrt/patches && cd openwrt && git apply --ignore-whitespace patches/*.patch && rm -rf patches
+ 
     - name: Load custom feeds
       run: |
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
