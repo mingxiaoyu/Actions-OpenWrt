@@ -76,8 +76,10 @@ jobs:
       run: |
         git checkout .
 
-        [ -e $R1_Plus_LTS_PATCH ] && mv $R1_Plus_LTS_PATCH openwrt/target/linux/rockchip/patches-6.6
+        #[ -e $R1_Plus_LTS_PATCH ] && mv $R1_Plus_LTS_PATCH openwrt/target/linux/rockchip/patches-6.6
         [ -e "$PATCHES_DIR" ] && mv "$PATCHES_DIR" openwrt/patches && cd openwrt && git apply --ignore-whitespace patches/*.patch && rm -rf patches
+	rm -rf  target/linux/rockchip/patches-6.6/991-arm64-dts-rockchip-add-more-cpu-operating-points-for.patch
+        wget -O target/linux/rockchip/patches-6.6/991-arm64-dts-rockchip-add-more-cpu-operating-points-for.patch https://raw.githubusercontent.com/mingxiaoyu/Actions-OpenWrt/main/991-arm64-dts-rockchip-add-more-cpu-operating-points-for.patch
  
     - name: Load custom feeds
       run: |

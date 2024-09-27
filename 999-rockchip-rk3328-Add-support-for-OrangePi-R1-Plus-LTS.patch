@@ -105,12 +105,3 @@
 +	};
  };
  
- &dmc_opp_table {
-@@ -19,6 +53,7 @@
- 	/delete-node/ opp-840000000;
- 	/delete-node/ opp-924000000;
- 	/delete-node/ opp-1056000000;
-+	/delete-node/ opp-1608000000;
- };
- 
- &gmac2io {
