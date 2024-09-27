@@ -62,3 +62,9 @@ COUNTRY_FULL_URL=https://github.com/MetaCubeX/meta-rules-dat/releases/download/l
 wget -qO- $COUNTRY_FULL_URL > files/etc/openclash/Country.mmdb
 
 chmod -R +x files
+
+# Openwrt version
+version=$(grep "DISTRIB_REVISION=" package/lean/default-settings/files/zzz-default-settings | awk -F"'" '{print $2}')
+sed -i '/DISTRIB_REVISION/d' package/lean/default-settings/files/zzz-default-settings
+sed -i "/exit 0/i echo \"DISTRIB_REVISION='${version} $(TZ=UTC-8 date "+%Y.%m.%d") Compiled by mingxiaoyu'\" >> /etc/openwrt_release" package/lean/default-settings/files/zzz-default-settings
+
