@@ -16,23 +16,22 @@ sed -i 's/192.168.1.1/192.168.3.1/g' package/base-files/files/bin/config_generat
 # Modify hostname
 #sed -i 's/OpenWrt/P3TERX-Router/g' package/base-files/files/bin/config_generate
 
-sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-5.4
-sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-5.10
-sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-5.15
-sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-6.1
-sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-6.6
+# sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-5.4
+# sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-5.10
+# sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-5.15
+# sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-6.1
+# sed -i '$a CONFIG_PHY_ROCKCHIP_INNO_USB3=y' target/linux/rockchip/armv8/config-6.6
 
 mkdir package/community
 
 pushd package/community
 
-
 popd
 
 # passwall2 singbox
 mkdir -p files/usr/share/singbox
-wget -O files/usr/share/singbox/geoip.db  https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.db 
-wget -O files/usr/share/singbox/geosite.db https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.db  
+wget -O files/usr/share/singbox/geoip.db  https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.db
+wget -O files/usr/share/singbox/geosite.db https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.db
 
 # 预置openclash内核
 mkdir -p files/etc/openclash/core
@@ -62,3 +61,8 @@ COUNTRY_FULL_URL=https://github.com/MetaCubeX/meta-rules-dat/releases/download/l
 wget -qO- $COUNTRY_FULL_URL > files/etc/openclash/Country.mmdb
 
 chmod -R +x files
+
+# Openwrt version
+version=$(grep "DISTRIB_REVISION=" package/lean/default-settings/files/zzz-default-settings | awk -F"'" '{print $2}')
+sed -i '/DISTRIB_REVISION/d' package/lean/default-settings/files/zzz-default-settings
+sed -i "/exit 0/i echo \"DISTRIB_REVISION='${version} $(TZ=UTC-8 date "+%Y.%m.%d") Compiled by mingxiaoyu'\" >> /etc/openwrt_release" package/lean/default-settings/files/zzz-default-settings
