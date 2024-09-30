@@ -1,0 +1,115 @@
+name: Lede Test
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      kernel:
+        description: 'OpenWRT kernel'
+        required: true
+        type: choice
+        options:
+          - 5.15
+          - latest
+
+env:
+  REPO_URL: https://github.com/coolsnowwolf/lede
+  REPO_BRANCH: master
+  FEEDS_CONF: feeds.conf.default
+  ENV_SH: scripts/environment.sh
+  PATCHES_DIR: patches
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2  # Use the stable v2 version
+
+      - name: Initialization environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          chmod +x ${{ env.ENV_SH }} && ${{ env.ENV_SH }}  # Fixed path usage
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get -qq update -y
+          sudo apt-get -qq full-upgrade -y
+          sudo mkdir -p /workdir
+          sudo chown $USER:$GROUPS /workdir
+
+      - name: Clone source code
+        working-directory: /workdir
+        run: |
+          df -hT $PWD
+          git clone ${{ env.REPO_URL }} -b ${{ env.REPO_BRANCH }} openwrt
+          ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+
+      - name: Cache
+        uses: klever1988/cachewrtbuild@main
+        with:
+          ccache: 'true'
+          mixkey: 'armv8_${{ github.event.inputs.kernel }}'
+          prefix: ${{ github.workspace }}/openwrt
+
+      - name: Patch
+        run: |
+          if [ "${{ github.event.inputs.kernel }}" == "5.15" ]; then
+              cp -f lede/armv8.mk openwrt/target/linux/rockchip/image/armv8.mk
+              rm -rf openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip
+              cp -rf lede/rockchip/files/arch/arm64/boot/dts/rockchip/. openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip
+              rm -rf openwrt/target/linux/rockchip/patches-5.15
+              cp -rf lede/rockchip/patches-5.15/. openwrt/target/linux/rockchip/patches-5.15
+          fi
+
+          if [ -e "$PATCHES_DIR" ]; then
+            mv "$PATCHES_DIR" openwrt/patches
+            cd openwrt
+            git apply --ignore-whitespace patches/*.patch
+            rm -rf patches
+          fi
+
+      - name: Update & Install feeds
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Load custom configuration
+        run: |
+          cd openwrt
+          echo "CONFIG_TARGET_DEVICE_rockchip_armv8_DEVICE_xunlong_orangepi-r1-plus-lts=y" > .config
+          if [ "${{ github.event.inputs.kernel }}" == "5.15" ]; then
+              sed -i 's/KERNEL_PATCHVER:=.*/KERNEL_PATCHVER:=5.15/g' target/linux/rockchip/Makefile
+          fi
+
+      - name: Download package
+        id: package
+        run: |
+          cd openwrt
+          make defconfig
+          make download -j8
+          find dl -size -1024c -exec ls -l {} \;
+          find dl -size -1024c -exec rm -f {} \;
+
+      - name: Compile the firmware
+        id: compile
+        run: |
+          cd openwrt
+          echo -e "$(nproc) thread compile"
+          make -j$(nproc) || make -j1 || make -j1 V=s
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Check files
+        if: steps.compile.outputs.status == 'success' && !cancelled()
+        run: |
+          cd openwrt/bin/targets/*/*
+          TARGET_FILE="openwrt-rockchip-armv8-xunlong_orangepi-r1-plus-lts-ext4-sysupgrade.img.gz"
+
+          # Check if the file exists
+          if [ -f "$TARGET_FILE" ]; then
+              echo "File $TARGET_FILE exists."
+          else
+              echo "File $TARGET_FILE does not exist."
+          fi

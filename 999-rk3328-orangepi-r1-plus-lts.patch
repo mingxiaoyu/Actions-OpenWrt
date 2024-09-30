@@ -1,0 +1,11 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
+@@ -60,3 +60,8 @@
+ &rtl8153 {
+ 	realtek,led-data = <0x78>;
+ };
++
++&cpu0_opp_table  {
++	/delete-node/ opp-1608000000;
++
++};
