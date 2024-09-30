@@ -16,7 +16,7 @@ on:
   repository_dispatch:
   workflow_dispatch:
   schedule:
-    - cron: '0 4 1 * *'  # Runs on the first day of every month at 04:00
+    - cron: "0 16 31 * *"
 
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
