@@ -2,16 +2,6 @@
 #
 # Copyright (C) 2020 Tobias Maedel
 
-define Device/advantech_rsb4810
-  DEVICE_VENDOR := Advantech
-  DEVICE_MODEL := RSB4810
-  SOC := rk3568
-  UBOOT_DEVICE_NAME := rsb4810-rk3568
-  IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
-  DEVICE_PACKAGES := kmod-ata-ahci-dwc -urngd
-endef
-TARGET_DEVICES += advantech_rsb4810
-
 define Device/ariaboard_photonicat
   DEVICE_VENDOR := Ariaboard
   DEVICE_MODEL := Photonicat
