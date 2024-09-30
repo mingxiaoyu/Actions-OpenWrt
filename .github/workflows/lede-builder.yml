@@ -81,6 +81,7 @@ jobs:
         run: |
           if [ "${{ matrix.VERSION }}" == "5.15" ]; then
             cp -f lede/armv8.mk openwrt/target/linux/rockchip/image/armv8.mk
+            cp -f lede/uboot-rockchip-Makefile openwrt/package/boot/uboot-rockchip/Makefile
             rm -rf openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip
             cp -rf lede/rockchip/files/arch/arm64/boot/dts/rockchip/. openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip
             rm -rf openwrt/target/linux/rockchip/patches-5.15
