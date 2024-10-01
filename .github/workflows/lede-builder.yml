@@ -53,14 +53,10 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          chmod +x $FREE_DISK_SH && $FREE_DISK_SH
-          sudo docker image prune --all --force
-          sudo -E apt-get -qq update -y
-          sudo -E apt-get -qq full-upgrade -y
-          chmod +x $ENV_SH && $ENV_SH
-          sudo -E apt-get -qq autoremove --purge
-          sudo -E apt-get -qq clean
-          sudo timedatectl set-timezone "$TZ"
+          chmod +x ${{ env.ENV_SH }} && ${{ env.ENV_SH }}  # Fixed path usage
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get -qq update -y
+          sudo apt-get -qq full-upgrade -y
           sudo mkdir -p /workdir
           sudo chown $USER:$GROUPS /workdir
 
@@ -68,7 +64,7 @@ jobs:
         working-directory: /workdir
         run: |
           df -hT $PWD
-          git clone $REPO_URL -b $REPO_BRANCH openwrt
+          git clone ${{ env.REPO_URL }} -b ${{ env.REPO_BRANCH }} openwrt
           ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
       - name: Cache
@@ -131,7 +127,7 @@ jobs:
             sed -i '/^CONFIG_TARGET_MULTI_PROFILE=y/d' openwrt/.config
             sed -i '/^CONFIG_TARGET_DEVICE_rockchip_armv8_/ { /_xunlong_orangepi-r1-plus-lts/!d; }' openwrt/.config
 
-            echo "only keep r1-plus-lts in configu"
+            echo "only keep r1-plus-lts in config"
           fi
 
           chmod +x $DIY_P2_SH
@@ -167,7 +163,6 @@ jobs:
 
       - name: Compile the firmware
         id: compile
-        continue-on-error: true
         run: |
           cd openwrt
           echo -e "$(nproc) thread compile"

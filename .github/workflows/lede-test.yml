@@ -17,6 +17,7 @@ env:
   REPO_BRANCH: master
   FEEDS_CONF: feeds.conf.default
   ENV_SH: scripts/environment.sh
+  CONFIG_FILE: lede.config
   PATCHES_DIR: patches
   TZ: Asia/Shanghai
 
@@ -81,11 +82,10 @@ jobs:
 
       - name: Load custom configuration
         run: |
+          [ -e $CONFIG_FILE ] && cp $CONFIG_FILE openwrt/.config
           cd openwrt
-          touch .config
-          echo "CONFIG_TARGET_rockchip=y" >> .config
-          echo "CONFIG_TARGET_rockchip_armv8=y" >> .config
-          echo "CONFIG_TARGET_rockchip_armv8_DEVICE_xunlong_orangepi-r1-plus-lts=y" >> .config
+          sed -i '/#target/,/#target/{p; d;}' .config
+          cat .config
           if [ "${{ github.event.inputs.kernel }}" == "5.15" ]; then
               sed -i 's/KERNEL_PATCHVER:=.*/KERNEL_PATCHVER:=5.15/g' target/linux/rockchip/Makefile
 
