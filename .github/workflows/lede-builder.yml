@@ -4,7 +4,7 @@ on:
   repository_dispatch:
   workflow_dispatch:
   schedule:
-    - cron: '0 4 1 * *'
+    - cron: '0 18 1 * *'
 
 env:
   REPO_URL: https://github.com/coolsnowwolf/lede
@@ -24,7 +24,7 @@ env:
 jobs:
   prepare_release:
     runs-on: ubuntu-22.04
-    if: github.event.repository.owner.id == github.event.sender.id
+    if: github.event.repository.owner.id == github.event.sender.id || github.event_name == 'schedule'
     steps:
       - name: Get release tag
         id: release_tag
