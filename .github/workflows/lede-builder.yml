@@ -43,9 +43,11 @@ jobs:
         FREQUENCY: [1.5, 1.6]
         SET: [docker, non-docker]
 
+    continue-on-error: true
+
     steps:
       - name: Checkout
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
 
       - name: Initialization environment
         env:
@@ -85,11 +87,15 @@ jobs:
             cp -rf lede/rockchip/files/arch/arm64/boot/dts/rockchip/. openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip
             rm -rf openwrt/target/linux/rockchip/patches-5.15
             cp -rf lede/rockchip/patches-5.15/. openwrt/target/linux/rockchip/patches-5.15
+
+            echo "replace the file during 5.15 kernel"
           fi
 
           if [ -e "$PATCHES_DIR" ]; then
             if [ "${{ matrix.FREQUENCY }}" == "1.6" ]; then
               rm -f "$PATCHES_DIR"/*999-rk3328-orangepi-r1-plus-lts-patch.patch
+
+              echo "remove 1.6 frequency"
             fi
             mv "$PATCHES_DIR" openwrt/patches
             cd openwrt
@@ -116,15 +122,16 @@ jobs:
           ./scripts/feeds install -a
 
       - name: Load custom configuration
-        continue-on-error: true
         run: |
           [ -e files ] && mv files openwrt/files
           [ -e $CONFIG_FILE ] && cp $CONFIG_FILE openwrt/.config
 
           if [ "${{ matrix.FREQUENCY }}" == "1.5" ]; then
-            # only keep "r1-plus-lts"
+
             sed -i '/^CONFIG_TARGET_MULTI_PROFILE=y/d' openwrt/.config
             sed -i '/^CONFIG_TARGET_DEVICE_rockchip_armv8_/ { /_xunlong_orangepi-r1-plus-lts/!d; }' openwrt/.config
+
+            echo "only keep r1-plus-lts in configu"
           fi
 
           chmod +x $DIY_P2_SH
@@ -134,6 +141,8 @@ jobs:
           # Update KERNEL_PATCHVER if needed
           if [ "${{ matrix.VERSION }}" == "5.15" ]; then
             sed -i 's/KERNEL_PATCHVER:=.*/KERNEL_PATCHVER:=5.15/g' target/linux/rockchip/Makefile
+
+            echo "set the kernel as 5.15"
           fi
 
       - name: Download package
@@ -142,6 +151,8 @@ jobs:
           cd openwrt
           if [ "${{ matrix.SET }}" == "docker" ]; then
             echo "CONFIG_PACKAGE_luci-app-dockerman=y" >> .config
+
+            echo "added docker in config"
           fi
           make defconfig
           make download -j8
@@ -172,7 +183,7 @@ jobs:
         id: organize
         if: steps.compile.outputs.status == 'success' && !cancelled()
         run: |
-          echo -e "✅ rockchip平台\nkernel $KERNEL_PATCHVER\nℹ 长时间无法启动请尝试重启或重刷\n🍃 如出现不稳定可尝试cpu降频" >> release.txt
+          echo -e "✅ rockchip平台.\n🔔 长时间无法启动请尝试重启或重刷.\n⏰只只有 R1 Plus LTS 版本的频率为 1.5GHz,其他版本的频率为 1.6GHz.\n⚠️ 如出现不稳定可尝试cpu降频." >> release.txt
           cd openwrt/bin/targets/*/*
           rm -rf packages
           SUFFIX="${{ env.KERNEL_PATCHVER }}-${{ matrix.FREQUENCY }}"
@@ -243,7 +254,7 @@ jobs:
         uses: dev-drprasad/delete-older-releases@master
         if: env.UPLOAD_RELEASE == 'true' && !cancelled()
         with:
-          keep_latest: 3
+          keep_latest: 10
           delete_tags: true
           delete_tag_pattern: Lede-Rockchip
         env:

@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2  # Use the stable v2 version
+        uses: actions/checkout@v4
 
       - name: Initialization environment
         env:
@@ -62,6 +62,8 @@ jobs:
               cp -rf lede/rockchip/files/arch/arm64/boot/dts/rockchip/. openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip
               rm -rf openwrt/target/linux/rockchip/patches-5.15
               cp -rf lede/rockchip/patches-5.15/. openwrt/target/linux/rockchip/patches-5.15
+
+               echo "replace the file during 5.15 kernel"
           fi
 
           if [ -e "$PATCHES_DIR" ]; then
@@ -86,6 +88,8 @@ jobs:
           echo "CONFIG_TARGET_rockchip_armv8_DEVICE_xunlong_orangepi-r1-plus-lts=y" >> .config
           if [ "${{ github.event.inputs.kernel }}" == "5.15" ]; then
               sed -i 's/KERNEL_PATCHVER:=.*/KERNEL_PATCHVER:=5.15/g' target/linux/rockchip/Makefile
+
+              echo "set the kernel as 5.15"
           fi
 
       - name: Download package

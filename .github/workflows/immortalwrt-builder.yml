@@ -37,7 +37,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2  # Use the stable v2 version
+        uses: actions/checkout@v4
 
       - name: Initialization environment
         env:
