@@ -25,15 +25,14 @@ jobs:
   prepare_release:
     runs-on: ubuntu-22.04
     if: github.event.repository.owner.id == github.event.sender.id || github.event_name == 'schedule'
+    outputs:
+      release_tag: ${{ steps.release_tag.outputs.release_tag }}
     steps:
       - name: Get release tag
         id: release_tag
         run: |
           release_tag="Lede-Rockchip-$(date +%Y-%m-%d)"
-          echo "release_tag=$release_tag" >> $GITHUB_ENV
-
-    outputs:
-      release_tag: ${{ steps.release_tag.outputs.release_tag }}
+          echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
 
   build_openwrt:
     needs: prepare_release
@@ -121,6 +120,13 @@ jobs:
         run: |
           [ -e files ] && mv files openwrt/files
           [ -e $CONFIG_FILE ] && cp $CONFIG_FILE openwrt/.config
+
+          if [ "${{ matrix.FREQUENCY }}" == "1.5" ]; then
+            # only keep "r1-plus-lts"
+            sed -i '/^CONFIG_TARGET_MULTI_PROFILE=y/d' openwrt/.config
+            sed -i '/^CONFIG_TARGET_DEVICE_rockchip_armv8_/ { /_xunlong_orangepi-r1-plus-lts/!d; }' openwrt/.config
+          fi
+
           chmod +x $DIY_P2_SH
           cd openwrt
           $GITHUB_WORKSPACE/$DIY_P2_SH
