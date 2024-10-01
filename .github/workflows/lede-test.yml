@@ -84,7 +84,7 @@ jobs:
         run: |
           [ -e $CONFIG_FILE ] && cp $CONFIG_FILE openwrt/.config
           cd openwrt
-          sed -i '/#target/,/#target/{p; d;}' .config
+          sed -i '/#target/,/#target/!d' .config
           cat .config
           if [ "${{ github.event.inputs.kernel }}" == "5.15" ]; then
               sed -i 's/KERNEL_PATCHVER:=.*/KERNEL_PATCHVER:=5.15/g' target/linux/rockchip/Makefile
