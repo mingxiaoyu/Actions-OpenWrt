@@ -1,7 +1,0 @@
-#!/bin/sh /etc/rc.common
-
-START=22
-
-start() {
-    /sbin/repair_ro
-}

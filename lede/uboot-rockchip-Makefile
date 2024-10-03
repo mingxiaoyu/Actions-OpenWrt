@@ -248,13 +248,6 @@ define U-Boot/rock-3a-rk3568
     radxa_rock-3a
 endef
 
-define U-Boot/rsb4810-rk3568
-  $(U-Boot/rk3568/Default)
-  NAME:=Advantech RSB4810
-  BUILD_DEVICES:= \
-    advantech_rsb4810
-endef
-
 define U-Boot/seewo-sv21-rk3568
   $(U-Boot/rk3568/Default)
   NAME:=Seewo sv21-rk3568
@@ -279,7 +272,6 @@ UBOOT_TARGETS := \
   r66s-rk3568 \
   radxa-e25-rk3568 \
   rock-3a-rk3568 \
-  rsb4810-rk3568 \
   seewo-sv21-rk3568 \
   station-p2-rk3568 \
   dlfr100-rk3399 \

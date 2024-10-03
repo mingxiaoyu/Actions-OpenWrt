@@ -1,0 +1,167 @@
+name: Lede Test
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      kernel:
+        description: 'OpenWRT kernel'
+        required: true
+        type: choice
+        options:
+          - 5.15
+          - latest
+      frequency:
+        description: 'CPU frequency'
+        required: true
+        type: choice
+        options:
+          - 1.5
+          - 1.6
+
+env:
+  REPO_URL: https://github.com/coolsnowwolf/lede
+  REPO_BRANCH: master
+  FEEDS_CONF: feeds.conf.default
+  ENV_SH: scripts/environment.sh
+  CONFIG_FILE: lede.config
+  PATCHES_DIR: patches
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set other environments
+        run: |
+          echo "KERNEL_VERSION=${{ github.event.inputs.kernel }}" >> $GITHUB_ENV
+          echo "FREQUENCY=${{ github.event.inputs.frequency }}" >> $GITHUB_ENV
+          echo "SET=docker" >> $GITHUB_ENV
+
+      - name: Initialization environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          chmod +x ${{ env.ENV_SH }} && ${{ env.ENV_SH }}  # Fixed path usage
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get -qq update -y
+          sudo apt-get -qq full-upgrade -y
+          sudo mkdir -p /workdir
+          sudo chown $USER:$GROUPS /workdir
+
+      - name: Clone source code
+        working-directory: /workdir
+        run: |
+          df -hT $PWD
+          git clone ${{ env.REPO_URL }} -b ${{ env.REPO_BRANCH }} openwrt
+          ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+
+      - name: Cache
+        uses: klever1988/cachewrtbuild@main
+        with:
+          ccache: 'true'
+          mixkey: 'armv8_${{ env.KERNEL_VERSION }}'
+          prefix: ${{ github.workspace }}/openwrt
+
+      - name: Patch
+        run: |
+          if [ "${{ env.KERNEL_VERSION }}" == "5.15" ]; then
+            echo "Applying 5.15 patches..."
+            cp -f lede/armv8.mk openwrt/target/linux/rockchip/image/armv8.mk
+            cp -f lede/uboot-rockchip-Makefile openwrt/package/boot/uboot-rockchip/Makefile
+            rm -rf openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip
+            cp -rf lede/rockchip/files/arch/arm64/boot/dts/rockchip/. openwrt/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip
+            rm -rf openwrt/target/linux/rockchip/patches-5.15
+            cp -rf lede/rockchip/patches-5.15/. openwrt/target/linux/rockchip/patches-5.15
+            sed -i 's/KERNEL_PATCHVER:=.*/KERNEL_PATCHVER:=5.15/g' openwrt/target/linux/rockchip/Makefile
+          fi
+
+          if [ -d "$PATCHES_DIR" ]; then
+            echo "Applying custom patches from $PATCHES_DIR..."
+            if [ "${{ env.FREQUENCY }}" == "1.6" ]; then
+              echo "Removing frequency-specific patch for 1.6..."
+              rm -f "$PATCHES_DIR"/*999-rk3328-orangepi-r1-plus-lts-patch.patch
+            fi
+            mv "$PATCHES_DIR" openwrt/patches
+            cd openwrt && git apply --ignore-whitespace patches/*.patch && rm -rf patches
+          fi
+
+      - name: Update & Install feeds
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          # rm -rf feeds/luci/applications/luci-app-mosdns
+          # rm -rf feeds/packages/net/{alist,adguardhome,mosdns,xray*,v2ray*,sing*,smartdns}
+          # rm -rf feeds/packages/utils/v2dat
+          # rm -rf feeds/packages/lang/golang
+          # git clone https://github.com/kenzok8/golang feeds/packages/lang/golang
+          ./scripts/feeds install -a
+
+      - name: Load custom configuration
+        run: |
+          [ -e files ] && mv files openwrt/files
+          [ -e $CONFIG_FILE ] && cp $CONFIG_FILE openwrt/.config
+
+          if [ "${{ env.FREQUENCY }}" == "1.5" ]; then
+            sed -i '/^CONFIG_TARGET_MULTI_PROFILE=y/d' openwrt/.config
+            sed -i '/^CONFIG_TARGET_rockchip_armv8_/ { /_xunlong_orangepi-r1-plus-lts/!d; }' openwrt/.config
+
+            echo "only keep r1-plus-lts in config"
+          fi
+
+          # for test
+          cd openwrt
+          sed -i '/#target/,/#target/!d' .config
+
+          # for test
+
+          cat .config
+
+      - name: Download package
+        id: package
+        run: |
+          cd openwrt
+          if [ "${{ env.SET }}" == "docker" ]; then
+            echo "CONFIG_PACKAGE_luci-app-dockerman=y" >> .config
+
+            echo "added docker in config"
+          fi
+
+          echo "CONFIG_TARGET_KERNEL_PARTSIZE=128" >> .config
+
+          make defconfig
+          make download -j8
+          find dl -size -1024c -exec ls -l {} \;
+          find dl -size -1024c -exec rm -f {} \;
+
+      - name: Get Kernel Patchver
+        run: |
+            cd openwrt
+            grep "^KERNEL_PATCHVER:=" target/linux/rockchip/Makefile | sed 's/KERNEL_PATCHVER:=//' |
+              awk '{print "KERNEL_PATCHVER=" $0}' >> $GITHUB_ENV
+
+      - name: Compile the firmware
+        id: compile
+        run: |
+          cd openwrt
+          echo -e "$(nproc) thread compile"
+          make -j$(nproc) || make -j1 || make -j1 V=s
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Check files
+        if: steps.compile.outputs.status == 'success' && !cancelled()
+        run: |
+          cd openwrt/bin/targets/*/*
+          ls
+          TARGET_FILE="openwrt-rockchip-armv8-xunlong_orangepi-r1-plus-lts-ext4-sysupgrade.img.gz"
+
+          # Check if the file exists
+          if [ -f "$TARGET_FILE" ]; then
+              echo "File $TARGET_FILE exists."
+          else
+              echo "File $TARGET_FILE does not exist."
+          fi
