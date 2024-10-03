@@ -107,8 +107,9 @@ jobs:
           [ -e $CONFIG_FILE ] && cp $CONFIG_FILE openwrt/.config
 
           if [ "${{ env.FREQUENCY }}" == "1.5" ]; then
-            sed -i '/^CONFIG_TARGET_MULTI_PROFILE=y/d' openwrt/.config
+            # sed -i '/^CONFIG_TARGET_MULTI_PROFILE=y/d' openwrt/.config
             sed -i '/^CONFIG_TARGET_rockchip_armv8_/ { /_xunlong_orangepi-r1-plus-lts/!d; }' openwrt/.config
+            sed -i '/^CONFIG_TARGET_DEVICE_rockchip_armv8_/ { /_xunlong_orangepi-r1-plus-lts/!d; }' openwrt/.config
 
             echo "only keep r1-plus-lts in config"
           fi
@@ -116,7 +117,7 @@ jobs:
           # for test
           cd openwrt
           sed -i '/#target/,/#target/!d' .config
-
+          echo "CONFIG_TARGET_KERNEL_PARTSIZE=256 >> .config
           # for test
 
           cat .config
@@ -130,8 +131,6 @@ jobs:
 
             echo "added docker in config"
           fi
-
-          echo "CONFIG_TARGET_KERNEL_PARTSIZE=128" >> .config
 
           make defconfig
           make download -j8

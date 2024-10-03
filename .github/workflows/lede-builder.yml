@@ -59,9 +59,11 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        chmod +x ${{ env.ENV_SH }} && ${{ env.ENV_SH }}
+        chmod +x ${{ env.FREE_DISK_SH }} && ${{ env.FREE_DISK_SH }}
         sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
         sudo apt-get -qq update -y && sudo apt-get -qq full-upgrade -y
+        chmod +x ${{ env.ENV_SH }} && ${{ env.ENV_SH }}
+        sudo -E apt-get -qq autoremove --purge && sudo -E apt-get -qq clean
         sudo mkdir -p /workdir && sudo chown $USER:$GROUPS /workdir
 
     - name: Clone source code
@@ -130,8 +132,9 @@ jobs:
 
         if [ "${{ env.FREQUENCY }}" == "1.5" ]; then
           echo "Applying frequency-specific configuration for 1.5..."
-          sed -i '/^CONFIG_TARGET_MULTI_PROFILE=y/d' openwrt/.config
+          # sed -i '/^CONFIG_TARGET_MULTI_PROFILE=y/d' openwrt/.config
           sed -i '/^CONFIG_TARGET_rockchip_armv8_/ { /_xunlong_orangepi-r1-plus-lts/!d; }' openwrt/.config
+          sed -i '/^CONFIG_TARGET_DEVICE_rockchip_armv8_/ { /_xunlong_orangepi-r1-plus-lts/!d; }' openwrt/.config
         fi
 
         chmod +x $DIY_P2_SH
@@ -144,7 +147,13 @@ jobs:
           echo "Enabling Docker support in the configuration..."
           echo "CONFIG_PACKAGE_luci-app-dockerman=y" >> .config
         fi
+
+        cat .config
+
         make defconfig
+
+        cat .config
+
         make download -j8
         find dl -size -1024c -exec rm -f {} \;
 
@@ -157,15 +166,19 @@ jobs:
     - name: Organize files and set firmware output
       if: success()
       run: |
+        echo -e "✅ rockchip平台.\n🔔 长时间无法启动请尝试重启或重刷.\n⏰只只有 R1 Plus LTS 版本的频率为 1.5GHz,其他版本的频率为 1.6GHz.\n⚠️ 如出现不稳定可尝试cpu降频." >> release.txt
         echo "Organizing firmware files..."
         cd openwrt/bin/targets/*/*
         rm -rf packages
         ls
+
         SUFFIX="${{ env.KERNEL_PATCHVER }}-${{ env.FREQUENCY }}"
         [ "${{ env.SET }}" == "docker" ] && SUFFIX="${SUFFIX}-docker"
         for file in *.img.gz; do
           drive=$(echo "$file" | sed -E 's/^(openwrt-rockchip-armv8-)(.*)(-(ext4|squashfs)-sysupgrade\.img\.gz)$/\2-\4/')
-          mv "$file" "${drive}-${SUFFIX}.img.gz"
+          new_filename="${drive}-${SUFFIX}.img.gz"
+          echo "Renaming $file to $new_filename"
+          mv "$file" "$new_filename"
         done
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
 
@@ -175,6 +188,16 @@ jobs:
       with:
         name: OpenWrt_firmware_${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}
+
+    - name: Upload firmware to release
+      uses: softprops/action-gh-release@master
+      if: success() && env.UPLOAD_RELEASE == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ needs.prepare_release.outputs.release_tag }}
+        body_path: release.txt
+        files: ${{ env.FIRMWARE }}/*
 
   notice_and_cleanup:
     needs: build_openwrt
@@ -193,3 +216,5 @@ jobs:
           keep_latest: 10
           delete_tags: true
           delete_tag_pattern: Lede-Rockchip
+        env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
