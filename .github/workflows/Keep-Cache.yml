@@ -1,0 +1,48 @@
+name: Keep Cache
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 */6 * *'  # At 00:00 (midnight) every 6 days
+
+env:
+  REPO_URL: https://github.com/coolsnowwolf/lede
+  REPO_BRANCH: master
+  TZ: Asia/Shanghai
+
+jobs:
+  keep:
+    runs-on: ubuntu-22.04
+    if: github.event.repository.owner.id == github.event.sender.id || github.event_name == 'schedule'
+    strategy:
+      matrix:
+        KERNEL_VERSION: ['5.15', 'latest']
+
+    continue-on-error: true
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
+    - name: Set environment variables
+      run: |
+        echo "KERNEL_VERSION=${{ matrix.KERNEL_VERSION }}" >> $GITHUB_ENV
+
+    - name: Initialize environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo mkdir -p /workdir && sudo chown $USER:$GROUPS /workdir
+
+    - name: Clone source code
+      working-directory: /workdir
+      run: |
+        git clone ${{ env.REPO_URL }} -b ${{ env.REPO_BRANCH }} openwrt
+        ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+
+    - name: Cache build
+      uses: klever1988/cachewrtbuild@main
+      with:
+        ccache: 'true'
+        mixkey: 'armv8_${{ env.KERNEL_VERSION }}'
+        prefix: ${{ github.workspace }}/openwrt
