@@ -6,17 +6,14 @@ on:
     - cron: '0 0 */6 * *'  # At 00:00 (midnight) every 6 days
 
 env:
-  REPO_URL: https://github.com/coolsnowwolf/lede
-  REPO_BRANCH: master
   TZ: Asia/Shanghai
 
 jobs:
   keep:
     runs-on: ubuntu-22.04
-    if: github.event.repository.owner.id == github.event.sender.id || github.event_name == 'schedule'
     strategy:
       matrix:
-        KERNEL_VERSION: ['5.15', 'latest']
+        KERNEL_VERSION: ['5.15', 'latest', 'immortalwrt']
 
     continue-on-error: true
 
@@ -27,6 +24,13 @@ jobs:
     - name: Set environment variables
       run: |
         echo "KERNEL_VERSION=${{ matrix.KERNEL_VERSION }}" >> $GITHUB_ENV
+        if [ "${{ matrix.KERNEL_VERSION }}" == "immortalwrt" ]; then
+          echo "REPO_URL=https://github.com/immortalwrt/immortalwrt" >> $GITHUB_ENV
+          echo "REPO_BRANCH=openwrt-23.05" >> $GITHUB_ENV
+        else
+          echo "REPO_URL=https://github.com/coolsnowwolf/lede" >> $GITHUB_ENV
+          echo "REPO_BRANCH=master" >> $GITHUB_ENV
+        fi
 
     - name: Initialize environment
       env:
