@@ -4,7 +4,7 @@ on:
   repository_dispatch:
   workflow_dispatch:
   schedule:
-    - cron: '0 18 1 * *'
+    - cron: '0 0 1 * *'
 
 env:
   REPO_URL: https://github.com/coolsnowwolf/lede
@@ -157,6 +157,12 @@ jobs:
         make download -j8
         find dl -size -1024c -exec rm -f {} \;
 
+    - name: Get Kernel Patchver
+      run: |
+        cd openwrt
+        grep "^KERNEL_PATCHVER:=" target/linux/rockchip/Makefile | sed 's/KERNEL_PATCHVER:=//' |
+          awk '{print "KERNEL_PATCHVER=" $0}' >> $GITHUB_ENV
+
     - name: Compile firmware
       run: |
         cd openwrt
@@ -166,10 +172,13 @@ jobs:
     - name: Organize files and set firmware output
       if: success()
       run: |
-        echo -e "✅ rockchip平台.\n🔔 长时间无法启动请尝试重启或重刷.\n⏰只只有 R1 Plus LTS 版本的频率为 1.5GHz,其他版本的频率为 1.6GHz.\n⚠️ 如出现不稳定可尝试cpu降频." >> release.txt
+        echo -e "✅ rockchip平台.\n🔔 长时间无法启动请尝试重启或重刷.\n⏰只有 R1 Plus LTS 版本的频率为 1.5GHz,其他版本的频率为 1.6GHz.\n⚠️ 如出现不稳定可尝试cpu降频." >> release.txt
         echo "Organizing firmware files..."
         cd openwrt/bin/targets/*/*
         rm -rf packages
+        #rm -rf *.buildinfo 
+        #rm -rf *.json 
+        rm -rf *.manifest
         ls
 
         SUFFIX="${{ env.KERNEL_PATCHVER }}-${{ env.FREQUENCY }}"
@@ -180,13 +189,14 @@ jobs:
           echo "Renaming $file to $new_filename"
           mv "$file" "$new_filename"
         done
+        echo "SUFFIX=$SUFFIX" >> $GITHUB_ENV
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
 
     - name: Upload firmware to release
       if: success() && env.UPLOAD_FIRMWARE == 'true'
       uses: actions/upload-artifact@main
       with:
-        name: OpenWrt_firmware_${{ env.FILE_DATE }}
+        name: OpenWrt_firmware_${{ env.SUFFIX }}
         path: ${{ env.FIRMWARE }}
 
     - name: Upload firmware to release
