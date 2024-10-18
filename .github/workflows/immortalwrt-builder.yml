@@ -79,9 +79,9 @@ jobs:
       - name: Load custom feeds
         run: |
           [ -e ${{ env.FEEDS_CONF }} ] && mv ${{ env.FEEDS_CONF }} openwrt/feeds.conf.default
-          #chmod +x ${{ env.DIY_P1_SH }}
-          #cd openwrt
-          #$GITHUB_WORKSPACE/${{ env.DIY_P1_SH }}
+          # chmod +x ${{ env.DIY_P1_SH }}
+          # cd openwrt
+          # $GITHUB_WORKSPACE/${{ env.DIY_P1_SH }}
 
       - name: Update & Install feeds
         run: |
